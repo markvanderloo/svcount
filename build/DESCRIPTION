@@ -1,0 +1,15 @@
+Package: svcount
+Maintainer: Mark van der Loo <mark.vanderloo@gmail.com>
+License: GPL-3
+Title: Faster detection and counting of special values.
+LazyData: no
+Type: Package
+LazyLoad: yes
+Author: Mark van der Loo
+Description: Faster detection and counting of special values (NA, NaN,...)
+Version: 0.0.1
+Depends: R (>= 3.0.0)
+Imports: methods
+URL: https://github.com/markvanderloo/svcount
+Date: 2013-04-28
+Suggests: testthat
