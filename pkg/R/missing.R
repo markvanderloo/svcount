@@ -61,40 +61,43 @@ setMethod("count_missing","data.frame", function(x,...){
   sapply(x,count_missing)
 })
 
+# @rdname count_missing
+# setMethod("count_missing","matrix", function(x,by=0,...){
+#   switch(as.character(by)
+#    , '0' = getMethod('count_missing', signature(storage2class[storage.mode(x)]))(x)
+#    , '1' = setNames(.Call(matfun(x),x,dim(x),TRUE), rownames(x))
+#    , '2' = setNames(.Call(matfun(x),x,dim(x),FALSE), colnames(x))
+#   )
+# })
+
+
 #' @rdname count_missing
-setMethod("count_missing","matrix", function(x,by=c('sum','row','col'),...){
-  by <- match.arg(by)
-  switch(by
-   , 'sum' = getMethod('count_missing', signature(storage2class[storage.mode(x)]))(x)
-   , 'row' = setNames(.Call(matfun(x),x,dim(x),TRUE), rownames(x))
-   , 'col' = setNames(.Call(matfun(x),x,dim(x),FALSE), colnames(x))
-  )
+setMethod("count_missing","matrix",function(x, by=0,...){
+  getMethod("count_missing","array")(x,by,...)
 })
 
-class2storage <- c(
-  "numeric" = "double"
-  ,"integer" = "integer"
-  ,"factor" = "integer"
-  ,"character" = "character"
-)
 
-storage2class <- setNames(names(class2storage),class2storage)
-
-matfun <- function(x){
-  sprintf("count_matrix_%s_missing",storage.mode(x))
+# get deployment class
+dpclass <- function(x){
+  s <- storage.mode(x)
+  if ( s == "double" ) "numeric" else s
+}  
+  
+arrfun <- function(x){
+ sprintf("count_array_%s_missing",storage.mode(x))
 }
+
 
 #' @rdname count_missing
 setMethod("count_missing","array",function(x,by,...){
   by <- as.integer(by)
   if ( identical(by,0L) )
-    return( getMethod("count_missing","numeric")(x) )
+    return( getMethod("count_missing",dpclass(x))(x) )
 
   outdim <- dim(x)[by]
   if (anyNA(outdim)) stop("Invalid output dimension")
   out <- array(0.0, dim=outdim, dimnames=dimnames(x)[by])
-  
-  .Call("count_array_integer_missing",x,by,out)
+  .Call(arrfun(x),x,by,out)
   out
 })
 
