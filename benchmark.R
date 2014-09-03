@@ -36,18 +36,20 @@ microbenchmark(
 
 
 
-
+library(microbenchmark)
 dyn.load('pkg/src/missing.so')
 rowmis <- function(x) .Call('count_matrix_integer_row_missing',x)
-
+colmis <- function(x) .Call('count_matrix_integer_col_missing',x)
 y <- as.integer(1:1e7)
 y[1:(1e7/2)] <- NA
-y <- matrix(y,nrow=2)
-rowmis(y)
+y <- matrix(y,ncol=2)
+u<-colmis(y)
+#u
 microbenchmark(
   rowmis(y)
   , rowSums(is.na(y))
-  , times=10
+  , times=500
+  , control=list(warmup=100)
 )
 
 
