@@ -6,7 +6,7 @@ typedef size_t idx;
 
 // --- simple counters over vectors ---//
 
-SEXP mkans(double x){
+static SEXP mkans(double x){
     SEXP ans;
     ans = PROTECT(allocVector(REALSXP, 1));
     REAL(ans)[0] = x;
@@ -65,134 +65,6 @@ SEXP count_character_missing(SEXP x){
   return mkans(n);
 }
 
-
-// --- counters over matrices --- //
-
-static void update_mat_counters(idx *irow, idx *icol, idx *iout, idx n, int byrow){
-  if ( *irow == n-1 ){ 
-    *irow = 0; 
-    (*icol)++;
-  } else { 
-    (*irow)++;
-  }
-  (*iout) = byrow ? *irow : *icol;
-}
-
-
-SEXP count_matrix_double_missing(SEXP x, SEXP dim, SEXP byrow){
-  PROTECT(x);
-  PROTECT(dim);
-  PROTECT(byrow);
-  
-  idx l = (idx) length(x)
-    , n = (idx) INTEGER(byrow)[0] ? INTEGER(dim)[0] : INTEGER(dim)[1]; // output size
-  int by_row = INTEGER(byrow)[0]
-    , nrow = INTEGER(dim)[0];
-
-  SEXP ans;
-  ans = PROTECT(allocVector(REALSXP, n));
-
-  double *X = REAL(x)
-    , *count = REAL(ans);  
-  
-  for ( idx i=0; i<n; i++) count[i] = 0.0;
-  
-  idx iout = 0, irow=0, icol = 0;
-  for ( idx i = 0; i < l; i++, X++){
-    if ( ISNAN(*X) ) count[iout] += 1;
-    update_mat_counters(&irow, &icol, &iout, nrow, by_row);
-  }
-
-  UNPROTECT(4);
-  return ans;
-
-}
-
-SEXP count_matrix_double_NA(SEXP x, SEXP dim, SEXP byrow){
-  PROTECT(x);
-  PROTECT(dim);
-  PROTECT(byrow);
-  
-  idx l = (idx) length(x)
-    , n = (idx) INTEGER(byrow)[0] ? INTEGER(dim)[0] : INTEGER(dim)[1]; // output size
-  int by_row = INTEGER(byrow)[0]
-    , nrow = INTEGER(dim)[0];
-
-  SEXP ans;
-  ans = PROTECT(allocVector(REALSXP, n));
-
-  double *X = REAL(x)
-    , *count = REAL(ans);  
-  
-  for ( idx i=0; i<n; i++) count[i] = 0.0;
-  
-  idx iout = 0, irow=0, icol = 0;
-  for ( idx i = 0; i < l; i++, X++){
-    if ( ISNA(*X) ) count[iout] += 1;
-    update_mat_counters(&irow, &icol, &iout, nrow, by_row);
-  }
-
-  UNPROTECT(4);
-  return ans;
-
-}
-
-
-SEXP count_matrix_integer_missing(SEXP x, SEXP dim, SEXP byrow){
-  PROTECT(x);
-  PROTECT(dim);
-  PROTECT(byrow);
-  
-  idx l = length(x)
-    , n = INTEGER(byrow)[0] ? INTEGER(dim)[0] : INTEGER(dim)[1]; // output size
-  int by_row = INTEGER(byrow)[0]
-    , nrow = INTEGER(dim)[0];
-
-  SEXP ans;
-  ans = PROTECT(allocVector(REALSXP, n));
-
-  int *X = INTEGER(x);
-  double  *count = REAL(ans);  
-  
-  for ( idx i=0; i<n; i++) count[i] = 0.0;
-  
-  idx iout = 0, irow=0, icol=0;
-  for ( idx i = 0; i < l; i++, X++){
-    if ( *X == NA_INTEGER )  ++count[iout]; 
-    update_mat_counters(&irow, &icol, &iout, nrow, by_row);
-  }
-
-  UNPROTECT(4);
-  return ans;
-}
-
-
-SEXP count_matrix_character_missing(SEXP x, SEXP dim, SEXP byrow){
-  PROTECT(x);
-  PROTECT(dim);
-  PROTECT(byrow);
-  
-  idx l = length(x)
-    , n = INTEGER(byrow)[0] ? INTEGER(dim)[0] : INTEGER(dim)[1]; // output size
-  int by_row = INTEGER(byrow)[0]
-    , nrow = INTEGER(dim)[0];
-
-  SEXP ans;
-  ans = PROTECT(allocVector(REALSXP, n));
-
-  double  *count = REAL(ans);  
-  
-  for ( idx i=0; i<n; i++) count[i] = 0.0;
-  
-  idx iout = 0, irow=0, icol=0;
-  for ( idx i = 0; i < l; i++){
-    if ( STRING_ELT(x,i) == NA_STRING )  ++count[iout]; 
-    update_mat_counters(&irow, &icol, &iout, nrow, by_row);
-  }
-
-  UNPROTECT(4);
-  return ans;
-}
 
 
 // --- General counters, storing counts in a (possibly multidimensional) array ---//
