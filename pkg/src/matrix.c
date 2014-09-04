@@ -3,17 +3,17 @@
 
 typedef size_t idx;
 
+/* ---------------- integer ---------------- */
 
 SEXP count_matrix_integer_row_missing(SEXP x){
   PROTECT(x);
  
   SEXP dim = getAttrib(x,R_DimSymbol);
-  int nrow = INTEGER(dim)[0] - 1;
+  int nrow = INTEGER(dim)[0]
+    , ncol = INTEGER(dim)[1];
  
-  idx l = length(x);
-
   SEXP ans;
-  ans = PROTECT(allocVector(REALSXP, nrow+1));
+  ans = PROTECT(allocVector(REALSXP, nrow));
 
   int *X = INTEGER(x);
   double  *count = REAL(ans);  
@@ -21,16 +21,15 @@ SEXP count_matrix_integer_row_missing(SEXP x){
   for ( idx i=0; i<nrow; i++, count++) (*count) = 0.0;
   count = REAL(ans);
   
-  idx iout = 0;
-  for ( idx i = 0; i < l; i++, X++){
-    if ( *X == NA_INTEGER ) ++count[iout]; 
-    if (iout < nrow) ++iout; else iout = 0;
+  for ( idx i=0; i < ncol; i++, count=REAL(ans)){
+    for(idx j=0; j < nrow; j++, count++, X++){
+      if ( *X == NA_INTEGER ) (*count)++;
+    }
   }
 
   UNPROTECT(2);
   return ans;
 }
-
 
 SEXP count_matrix_integer_col_missing(SEXP x){
   PROTECT(x);
@@ -39,20 +38,18 @@ SEXP count_matrix_integer_col_missing(SEXP x){
   int nrow = INTEGER(dim)[0] - 1
     , ncol = INTEGER(dim)[1];
  
-//  idx l = length(x);
-
   SEXP ans;
   ans = PROTECT(allocVector(REALSXP, ncol));
 
   int *X = INTEGER(x);
   double  *count = REAL(ans);  
   
-  for ( idx i=0; i<ncol; i++, count++) (*count) = 0.0;
+  for ( idx i=0; i < ncol; i++, count++ ) (*count) = 0.0;
   count = REAL(ans);
   
-  for ( idx j=0; j < ncol; j++){
+  for ( idx j=0; j < ncol; j++, count++ ){
     for ( idx i=0; i<=nrow; i++, X++){
-      if ( *X==NA_INTEGER) ++count[j];
+      if ( *X==NA_INTEGER) (*count)++;
     }
   }
 
@@ -60,6 +57,113 @@ SEXP count_matrix_integer_col_missing(SEXP x){
   return ans;
 }
 
+/* ---------------- double ----------------- */
+
+SEXP count_matrix_double_row_missing(SEXP x){
+  PROTECT(x);
+ 
+  SEXP dim = getAttrib(x,R_DimSymbol);
+  int nrow = INTEGER(dim)[0]
+    , ncol = INTEGER(dim)[1];
+ 
+  SEXP ans;
+  ans = PROTECT(allocVector(REALSXP, nrow));
+
+  double *X = REAL(x);
+  double  *count = REAL(ans);  
+  
+  for ( idx i=0; i < nrow; i++, count++ ) (*count) = 0.0;
+  count = REAL(ans);
+  
+  for ( idx i=0; i < ncol; i++, count=REAL(ans)){
+    for(idx j=0; j < nrow; j++, count++, X++){
+      if ( ISNAN(*X) ) (*count)++;
+    }
+  }
+
+  UNPROTECT(2);
+  return ans;
+}
+
+SEXP count_matrix_double_col_missing(SEXP x){
+  PROTECT(x);
+ 
+  SEXP dim = getAttrib(x,R_DimSymbol);
+  int nrow = INTEGER(dim)[0] - 1
+    , ncol = INTEGER(dim)[1];
+ 
+  SEXP ans;
+  ans = PROTECT(allocVector(REALSXP, ncol));
+
+  double *X = REAL(x);
+  double  *count = REAL(ans);  
+  
+  for ( idx i=0; i < ncol; i++, count++) (*count) = 0.0;
+  count = REAL(ans);
+  
+  for ( idx j=0; j < ncol; j++, count++ ){
+    for ( idx i=0; i<=nrow; i++, X++){
+      if ( ISNAN(*X) ) (*count)++;
+    }
+  }
+
+  UNPROTECT(2);
+  return ans;
+}
+
+/* ---------------- character -------------- */
+
+SEXP count_matrix_character_row_missing(SEXP x){
+  PROTECT(x);
+ 
+  SEXP dim = getAttrib(x,R_DimSymbol);
+  int nrow = INTEGER(dim)[0]
+    , ncol = INTEGER(dim)[1];
+ 
+  SEXP ans;
+  ans = PROTECT(allocVector(REALSXP, nrow));
+
+  idx t = 0;
+  double  *count = REAL(ans);  
+  
+  for ( idx i=0; i < nrow; i++, count++ ) (*count) = 0.0;
+  count = REAL(ans);
+  
+  for ( idx i=0; i < ncol; i++, count=REAL(ans)){
+    for(idx j=0; j < nrow; j++, count++, t++){
+      if ( STRING_ELT(x,t) == NA_STRING ) (*count)++;
+    }
+  }
+
+  UNPROTECT(2);
+  return ans;
+}
+
+SEXP count_matrix_character_col_missing(SEXP x){
+  PROTECT(x);
+ 
+  SEXP dim = getAttrib(x,R_DimSymbol);
+  int nrow = INTEGER(dim)[0] - 1
+    , ncol = INTEGER(dim)[1];
+ 
+  SEXP ans;
+  ans = PROTECT(allocVector(REALSXP, ncol));
+
+  idx t = 0;
+  double  *count = REAL(ans);  
+  
+  for ( idx i=0; i < ncol; i++, count++) (*count) = 0.0;
+  count = REAL(ans);
+  
+  for ( idx j=0; j < ncol; j++, count++ ){
+    for ( idx i=0; i<=nrow; i++, t++){
+      if ( STRING_ELT(x,t) == NA_STRING ) (*count)++;
+    }
+  }
+
+  UNPROTECT(2);
+  return ans;
+}
 
 
 
