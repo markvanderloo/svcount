@@ -1,7 +1,8 @@
 
-//#define USE_R_INTERNALS
+#define USE_R_INTERNALS
 #include <R.h>
 #include <Rinternals.h>
+#include <math.h>
 #include "sv.h"
 
 // --- simple counters over vectors ---//
@@ -29,6 +30,7 @@ SEXP count_double_missing(SEXP x){
 }
 
 // count pure NA (not NaN)
+/* Currently not exported
 SEXP count_double_NA(SEXP x){
   PROTECT(x);
   idx l = (idx) length(x);
@@ -41,6 +43,8 @@ SEXP count_double_NA(SEXP x){
   UNPROTECT(1);
   return mkans(n);
 }
+*/
+
 
 SEXP count_integer_missing(SEXP x){
   PROTECT(x);
@@ -114,6 +118,83 @@ SEXP count_missing_along_character(SEXP x, SEXP out){
 
   UNPROTECT(2);
   return out;
+}
+
+
+// detection functions
+
+static SEXP mklgl(int x){
+    SEXP ans;
+    ans = PROTECT(allocVector(LGLSXP, 1));
+    INTEGER(ans)[0] = x;
+    UNPROTECT(1);
+    return ans;
+}
+
+SEXP any_finite(SEXP x){
+  PROTECT(x);
+  double *X = REAL(x);
+  idx l = (idx) length(x);
+
+  int ans = 0;
+  for ( idx i = 0; i<l; i++, X++){
+    if ( R_finite(*X) ){
+      ans = 1;
+      break;
+    }
+  }
+  UNPROTECT(1);
+  return mklgl(ans);
+}
+
+SEXP all_finite(SEXP x){
+  PROTECT(x);
+  double *X = REAL(x);
+  idx l = (idx) length(x);
+
+  int ans = 1;
+  for ( idx i = 0; i<l; i++, X++){
+    if ( !R_finite(*X) ){
+      ans = 0;
+      break;
+    }
+  }
+  UNPROTECT(1);
+  return mklgl(ans);
+}
+
+
+SEXP any_inf(SEXP x){
+  PROTECT(x);
+  double *X = REAL(x);
+  idx l = (idx) length(x);
+
+  int ans = 0;
+  for ( idx i = 0; i<l; i++, X++){
+    if ( isinf(*X) ){
+      ans = 1;
+      break;
+    }
+  }
+  UNPROTECT(1);
+  return mklgl(ans);
+}
+
+
+SEXP all_inf(SEXP x){
+  PROTECT(x);
+  double *X = REAL(x);
+  idx l = (idx) length(x);
+
+  int ans = 1;
+  for ( idx i = 0; i<l; i++, X++){
+    if ( isinf(*X) ){
+      ans = 0;
+      break;
+    }
+  }
+  UNPROTECT(1);
+  return mklgl(ans);
 }
 
 

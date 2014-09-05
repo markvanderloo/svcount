@@ -1,60 +1,68 @@
 
 library(svcount)
-library(compiler)
 library(microbenchmark)
 
-m <- structure(
-  matrix(1:12,nrow=3)
-  , dimnames=list(rr=letters[1:3],cc=letters[4:7])
+N <- 1e7
+NROW <- 1000
+
+cat("### Benchmarking integers ------------------\n")
+x <- matrix(1:N,nrow=NROW)
+x[1:floor(N/2)] <- NA
+
+microbenchmark(times=50           
+  , count_missing(x,by=1)
+  , rowSums(is.na(x))
 )
 
-# test data
-x <- matrix(runif(1e7),ncol=100,nrow=1e5)
-
-x[1:(1e7/2)] <- NA
-
-# standard R functions (compiled)
-sumNA <- cmpfun(function(x) sum(is.na(x)))
-rowNA <- cmpfun(function(x) rowSums(is.na(x)))
-
-
-microbenchmark(
-  count_missing(x)
-  ,sumNA(x)
-  ,times=10
+microbenchmark(times=50           
+ , count_missing(x,by=2)
+ , colSums(is.na(x))
 )
 
-microbenchmark(
-  count_missing(x,by=1)
-  ,rowNA(x)
-  ,times=10
+cat("### Benchmarking doubles -------------------\n")
+x <- matrix((1:N)/2,nrow=NROW)
+x[1:floor(N/2)] <- NA
+
+microbenchmark(times=50           
+ , count_missing(x,by=1)
+ , rowSums(is.na(x))
+)
+
+microbenchmark(times=50           
+ , count_missing(x,by=2)
+ , colSums(is.na(x))
+)
+
+cat("### Benchmarking characters ------------------\n")
+x <- matrix(rep(letters[1],N),nrow=NROW)
+x[1:floor(N/2)] <- NA
+microbenchmark(times=50           
+ , count_missing(x,by=1)
+ , rowSums(is.na(x))
+)
+
+microbenchmark(times=50           
+   , count_missing(x,by=2)
+   , colSums(is.na(x))
 )
 
 
-y <- runif(1e7)
-microbenchmark(
-  count_missing(y)
-  ,sumNA(y)
-  ,times=10
+cat("### Benchmarking data.frames ---------------\n")
+d <- data.frame(
+  x = 1:N
+  ,y = (1:N)/2
+  ,z = rep(letters[1],N)
+)
+microbenchmark(times=50
+  , count_missing(d,1)
+  , rowSums(is.na(d))
 )
 
-
-
-library(microbenchmark)
-dyn.load('pkg/src/missing.so')
-rowmis <- function(x) .Call('count_matrix_integer_row_missing',x)
-colmis <- function(x) .Call('count_matrix_integer_col_missing',x)
-y <- as.integer(1:1e7)
-y[1:(1e7/2)] <- NA
-y <- matrix(y,ncol=2)
-u<-colmis(y)
-#u
-microbenchmark(
-  rowmis(y)
-  , rowSums(is.na(y))
-  , times=500
-  , control=list(warmup=100)
+microbenchmark(times=50
+  , count_missing(d,2)
+  , colSums(is.na(d))
 )
+
 
 
 

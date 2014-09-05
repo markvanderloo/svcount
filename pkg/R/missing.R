@@ -17,9 +17,9 @@
 #' @section Details:
 #' 
 #' For objects with \code{storage.mode} \code{double}, both \code{NaN} and \code{NA} are considered
-#' missing, similar to how \code{is.na} treats these values. The function \code{\link{count_NA}} counts
-#' pure \code{NA}'s. Note that since \code{R >= 3.0}, the result of \code{NA + NaN} may be \code{NA}
-#' or \code{NaN} (it depends on the compiler used to build R) and very likely \code{NA + NaN != NaN + NA}.
+#' missing, similar to how \code{is.na} treats these values. Note that since \code{R >= 3.0}, the result 
+#' of \code{NA + NaN} may be \code{NA} or \code{NaN} (it depends on the compiler implementation
+#' used to build R) and very likely \code{NA + NaN != NaN + NA}.
 #'
 #'
 #' @export
@@ -88,8 +88,14 @@ setMethod("count_missing","matrix", function(x, by=0,...){
     , '0' = getMethod("count_missing",array_mode(x))(x)
     , '1' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_row_missing"),x),rownames(x))
     , '2' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_col_missing"),x),colnames(x))
-    , '12'= structure(as.integer(is.na(x)),dim=dim(x))
-    , '21'= structure(as.integer(t(is.na(x))), dim=rev(dim(x)))
+    , '12'= {
+      out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
+      .Call(paste0("count_missing_along_",storage.mode(x)),x,out)
+      } 
+    , '21' = {
+      out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
+      t(.Call(paste0("count_missing_along_",storage.mode(x)),x,out))
+    }
     , stop('Invalid marginal definition\n')
   )
 })
@@ -125,12 +131,6 @@ setMethod("count_missing","array",function(x,by=0,...){
 })
 
 
-#' @rdname count_missing
-setGeneric("count_NA",function(x,...) standardGeneric("count_NA"))
-
-setMethod("count_NA","numeric",function(x,...){
-  .Call("count_double_NA",x)
-})
 
 
 

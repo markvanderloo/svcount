@@ -10,8 +10,8 @@ test_that("counting works in numeric vectors",{
   expect_equal(count_missing(1:3/2),0)
   expect_equal(count_missing(c(1:3/2,NA)),1)
   expect_equal(count_missing(c(1:3/2,NaN)),1)
-  expect_equal(count_NA(c(1:3/2,NaN)),0)
-  expect_equal(count_NA(c(1:3/2,NA)),1)
+#  expect_equal(count_NA(c(1:3/2,NaN)),0)
+#  expect_equal(count_NA(c(1:3/2,NA)),1)
   
 })
 

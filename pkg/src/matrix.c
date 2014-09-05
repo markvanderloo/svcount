@@ -1,5 +1,5 @@
 
-//#define USE_R_INTERNALS
+#define USE_R_INTERNALS
 #include <R.h>
 #include <Rinternals.h>
 #include "sv.h"
