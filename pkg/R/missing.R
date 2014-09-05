@@ -24,42 +24,58 @@
 #'
 #' @export
 #' @return Missing value counts.
-#'
-setGeneric("count_missing", function(x,...) standardGeneric("count_missing"))
+count_missing <- function(x,...){
+  UseMethod("count_missing")  
+}
+
 
 #' @rdname count_missing
-setMethod("count_missing","numeric", function(x,...){
+#' @export 
+count_missing.default <- function(x,...){
+  .Call(paste0("count_",storage.mode(x),"_missing"),x)
+}
+
+
+#' @rdname count_missing
+#' @export 
+count_missing.numeric <- function(x,...){
   .Call('count_double_missing',x)  
-})
+}
 
 #' @rdname count_missing
-setMethod("count_missing","integer",function(x,...){
+#' @export 
+count_missing.integer <- function(x,...){
   .Call('count_integer_missing',x)
-})
+}
 
 #' @rdname count_missing
-setMethod("count_missing","character",function(x,...){
+#' @export 
+count_missing.character <- function(x,...){
   .Call('count_character_missing',x)
-})
+}
 
 #' @rdname count_missing
-setMethod("count_missing","logical",function(x,...){
+#' @export 
+count_missing.logical <- function(x,...){
   .Call('count_integer_missing',x)  
-})
+}
 
 # 'raw' has no NA definition, but since is.na works on it nevertheless, we present:
 #' @rdname count_missing
-setMethod("count_missing","raw",function(x,...) 0 )
+#' @export 
+count_missing.raw <- function(x,...) 0 
 
 #' @rdname count_missing
-setMethod("count_missing","factor",function(x,...){
+#' @export 
+count_missing.factor <- function(x,...){
   .Call('count_integer_missing',x)
-})
+}
 
 #' @rdname count_missing
-setMethod("count_missing","data.frame", function(x,by=0,...){
+#' @export 
+count_missing.data.frame <- function(x,by=0,...){
   switch(paste0(by,collapse="")
-    , "0" = sum(sapply(x,count_missing))
+    , "0" = sum(sapply(x,count_missing.default))
     , "1" = {
       out <- numeric(nrow(x))
       for ( i in seq_len(ncol(x))){ 
@@ -67,9 +83,9 @@ setMethod("count_missing","data.frame", function(x,by=0,...){
       }
       out
     }
-    , "2" = sapply(x,count_missing)
+    , "2" = sapply(x,count_missing.default)
   )
-})
+}
 
 
 ## Methods for matrices ----------------------------
@@ -82,10 +98,11 @@ array_mode <- function(x){
 }
 
 #' @rdname count_missing
-setMethod("count_missing","matrix", function(x, by=0,...){
+#' @export 
+count_missing.matrix <- function(x, by=0,...){
   if (is.character(by)) by <- match_by(by,x)
   switch(paste0(by,collapse="")
-    , '0' = getMethod("count_missing",array_mode(x))(x)
+    , '0' = count_missing.default(x,...)
     , '1' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_row_missing"),x),rownames(x))
     , '2' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_col_missing"),x),colnames(x))
     , '12'= {
@@ -98,7 +115,7 @@ setMethod("count_missing","matrix", function(x, by=0,...){
     }
     , stop('Invalid marginal definition\n')
   )
-})
+}
 
 match_by <- function(by,x){
   if ( length(by) == 0 ){ 
@@ -110,25 +127,26 @@ match_by <- function(by,x){
 
 
 #' @rdname count_missing
-setMethod("count_missing","array",function(x,by=0,...){
+#' @export 
+count_missing.array <- function(x,by=0,...){
   by <- as.integer(by)
   if ( by == 0 )
-    return( getMethod("count_missing",array_mode(x))(x) )
+    return( count_missing.default(x,...) )
 
   outdim <- dim(x)[by]
   outdn <- dimnames(x)[by]
   
   if (length(dim(x)) == 2 )
     return(array(
-      getMethod("count_missing","matrix")(x,by,...)
+      count_missing.matrix(x,by,...)
       , dim = outdim
-      , outdn = outdn
+      , dimnames = outdn
     ))
   
   if (anyNA(outdim)) stop("Invalid output dimension")
   out <- array(0.0, dim=outdim, dimnames=outdn)
   .Call(sprintf("count_array_%s_missing",storage.mode(x)),x,by,out)
-})
+}
 
 
 
