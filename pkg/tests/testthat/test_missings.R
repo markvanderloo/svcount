@@ -93,4 +93,16 @@ test_that("counting over character arrays",{
   expect_equivalent(count_missing(a,by=c(2,3)),array(c(2,2,2,0,0,0),dim=c(2,3)))
 })
 
+context("Counting over data.frames")
+test_that("data.frames are counted over correctly",{
+  d <- data.frame(
+      int = c(NA,2L,3L)
+    , dbl = c(1.1,NA,3.3)
+    , chr = c('a','b',NA)
+  )
+  expect_equal(count_missing(d),3)
+  expect_equal(count_missing(d,by=1),c(1,1,1))
+  expect_equal(count_missing(d,by=2),c(int=1,dbl=1,chr=1))
+})
+
 

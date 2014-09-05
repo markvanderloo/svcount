@@ -1,5 +1,5 @@
 
-#define USE_R_INTERNALS
+//#define USE_R_INTERNALS
 #include <R.h>
 #include <Rinternals.h>
 #include "sv.h"
@@ -66,9 +66,55 @@ SEXP count_character_missing(SEXP x){
 }
 
 
+// counting along a vector. 
+// Useful for row counting over data.frames and some 
+// edge cases in counting over arrays.
+
+SEXP count_missing_along_integer(SEXP x, SEXP out){
+  PROTECT(x);
+  PROTECT(out);
+  idx l = (idx) length(x);
+  int *X = INTEGER(x);
+  double *count = REAL(out);
+
+  for ( idx i=0; i < l; i++, count++, X++){
+    if ( (*X) == NA_INTEGER ) (*count)++;
+  }
+
+  UNPROTECT(2);
+  return out;
+}
 
 
+SEXP count_missing_along_double(SEXP x, SEXP out){
+  PROTECT(x);
+  PROTECT(out);
+  idx l = (idx) length(x);
+  double *X = REAL(x)
+       , *count = REAL(out);
 
+  for ( idx i=0; i < l; i++, count++, X++){
+    if ( ISNAN(*X) ) (*count)++;
+  }
+
+  UNPROTECT(2);
+  return out;
+}
+
+
+SEXP count_missing_along_character(SEXP x, SEXP out){
+  PROTECT(x);
+  PROTECT(out);
+  idx l = (idx) length(x);
+  double *count = REAL(out);
+
+  for ( idx i=0; i < l; i++, count++){
+    if ( STRING_ELT(x,i) == NA_STRING ) (*count)++;
+  }
+
+  UNPROTECT(2);
+  return out;
+}
 
 
 

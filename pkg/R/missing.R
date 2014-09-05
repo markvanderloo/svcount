@@ -60,6 +60,13 @@ setMethod("count_missing","factor",function(x,...){
 setMethod("count_missing","data.frame", function(x,by=0,...){
   switch(paste0(by,collapse="")
     , "0" = sum(sapply(x,count_missing))
+    , "1" = {
+      out <- numeric(nrow(x))
+      for ( i in seq_len(ncol(x))){ 
+        .Call(paste0("count_missing_along_",storage.mode(x[[i]])),x[[i]],out)
+      }
+      out
+    }
     , "2" = sapply(x,count_missing)
   )
 })
