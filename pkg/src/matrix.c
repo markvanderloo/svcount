@@ -157,7 +157,7 @@ SEXP count_matrix_character_col_missing(SEXP x){
   count = REAL(ans);
   
   for ( idx j=0; j < ncol; j++, count++ ){
-    for ( idx i=0; i<=nrow; i++, t++){
+    for ( idx i=0; i <= nrow; i++, t++){
       if ( STRING_ELT(x,t) == NA_STRING ) (*count)++;
     }
   }
