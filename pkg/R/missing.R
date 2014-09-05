@@ -53,52 +53,68 @@ setMethod("count_missing","raw",function(x,...) 0 )
 
 #' @rdname count_missing
 setMethod("count_missing","factor",function(x,...){
-  .Call('count_int_missing',x)
+  .Call('count_integer_missing',x)
 })
 
 #' @rdname count_missing
-setMethod("count_missing","data.frame", function(x,...){
-  sapply(x,count_missing)
+setMethod("count_missing","data.frame", function(x,by=0,...){
+  switch(paste0(by,collapse="")
+    , "0" = sum(sapply(x,count_missing))
+    , "2" = sapply(x,count_missing)
+  )
 })
 
-# @rdname count_missing
-# setMethod("count_missing","matrix", function(x,by=0,...){
-#   switch(as.character(by)
-#    , '0' = getMethod('count_missing', signature(storage2class[storage.mode(x)]))(x)
-#    , '1' = setNames(.Call(matfun(x),x,dim(x),TRUE), rownames(x))
-#    , '2' = setNames(.Call(matfun(x),x,dim(x),FALSE), colnames(x))
-#   )
-# })
 
+## Methods for matrices ----------------------------
+
+# discover storage mode of an array or matrix and return as 
+# the corresponding R class.
+array_mode <- function(x){
+  m <- storage.mode(x)
+  if (m=='double') 'numeric' else m
+}
 
 #' @rdname count_missing
-setMethod("count_missing","matrix",function(x, by=0,...){
-  getMethod("count_missing","array")(x,by,...)
+setMethod("count_missing","matrix", function(x, by=0,...){
+  if (is.character(by)) by <- match_by(by,x)
+  switch(paste0(by,collapse="")
+    , '0' = getMethod("count_missing",array_mode(x))(x)
+    , '1' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_row_missing"),x),rownames(x))
+    , '2' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_col_missing"),x),colnames(x))
+    , '12'= structure(as.integer(is.na(x)),dim=dim(x))
+    , '21'= structure(as.integer(t(is.na(x))), dim=rev(dim(x)))
+    , stop('Invalid marginal definition\n')
+  )
 })
 
-
-# get deployment class
-dpclass <- function(x){
-  s <- storage.mode(x)
-  if ( s == "double" ) "numeric" else s
-}  
-  
-arrfun <- function(x){
- sprintf("count_array_%s_missing",storage.mode(x))
+match_by <- function(by,x){
+  if ( length(by) == 0 ){ 
+    0
+  } else {
+    match(by,names(dimnames(x)))
+  }
 }
 
 
 #' @rdname count_missing
-setMethod("count_missing","array",function(x,by,...){
+setMethod("count_missing","array",function(x,by=0,...){
   by <- as.integer(by)
-  if ( identical(by,0L) )
-    return( getMethod("count_missing",dpclass(x))(x) )
+  if ( by == 0 )
+    return( getMethod("count_missing",array_mode(x))(x) )
 
   outdim <- dim(x)[by]
+  outdn <- dimnames(x)[by]
+  
+  if (length(dim(x)) == 2 )
+    return(array(
+      getMethod("count_missing","matrix")(x,by,...)
+      , dim = outdim
+      , outdn = outdn
+    ))
+  
   if (anyNA(outdim)) stop("Invalid output dimension")
-  out <- array(0.0, dim=outdim, dimnames=dimnames(x)[by])
-  .Call(arrfun(x),x,by,out)
-  out
+  out <- array(0.0, dim=outdim, dimnames=outdn)
+  .Call(sprintf("count_array_%s_missing",storage.mode(x)),x,by,out)
 })
 
 

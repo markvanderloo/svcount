@@ -1,7 +1,8 @@
+
+//#define USE_R_INTERNALS
 #include <R.h>
 #include <Rinternals.h>
-
-typedef size_t idx;
+#include "sv.h"
 
 /* ---------------- integer ---------------- */
 
@@ -16,12 +17,12 @@ SEXP count_matrix_integer_row_missing(SEXP x){
   ans = PROTECT(allocVector(REALSXP, nrow));
 
   int *X = INTEGER(x);
-  double  *count = REAL(ans);  
+  double  *count = REAL(ans), *start = REAL(ans);  
   
   for ( idx i=0; i<nrow; i++, count++) (*count) = 0.0;
-  count = REAL(ans);
+  count = start;
   
-  for ( idx i=0; i < ncol; i++, count=REAL(ans)){
+  for ( idx i=0; i < ncol; i++, count = start){
     for(idx j=0; j < nrow; j++, count++, X++){
       if ( *X == NA_INTEGER ) (*count)++;
     }
@@ -42,7 +43,7 @@ SEXP count_matrix_integer_col_missing(SEXP x){
   ans = PROTECT(allocVector(REALSXP, ncol));
 
   int *X = INTEGER(x);
-  double  *count = REAL(ans);  
+  double *count = REAL(ans);
   
   for ( idx i=0; i < ncol; i++, count++ ) (*count) = 0.0;
   count = REAL(ans);
@@ -70,12 +71,12 @@ SEXP count_matrix_double_row_missing(SEXP x){
   ans = PROTECT(allocVector(REALSXP, nrow));
 
   double *X = REAL(x);
-  double  *count = REAL(ans);  
+  double  *count = REAL(ans), *start = REAL(ans);  
   
   for ( idx i=0; i < nrow; i++, count++ ) (*count) = 0.0;
   count = REAL(ans);
   
-  for ( idx i=0; i < ncol; i++, count=REAL(ans)){
+  for ( idx i=0; i < ncol; i++, count=start ){
     for(idx j=0; j < nrow; j++, count++, X++){
       if ( ISNAN(*X) ) (*count)++;
     }
@@ -124,12 +125,12 @@ SEXP count_matrix_character_row_missing(SEXP x){
   ans = PROTECT(allocVector(REALSXP, nrow));
 
   idx t = 0;
-  double  *count = REAL(ans);  
+  double  *count = REAL(ans), *start = REAL(ans);
   
   for ( idx i=0; i < nrow; i++, count++ ) (*count) = 0.0;
-  count = REAL(ans);
+  count = start;
   
-  for ( idx i=0; i < ncol; i++, count=REAL(ans)){
+  for ( idx i=0; i < ncol; i++, count=start ){
     for(idx j=0; j < nrow; j++, count++, t++){
       if ( STRING_ELT(x,t) == NA_STRING ) (*count)++;
     }

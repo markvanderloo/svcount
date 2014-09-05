@@ -3,6 +3,10 @@ library(svcount)
 library(compiler)
 library(microbenchmark)
 
+m <- structure(
+  matrix(1:12,nrow=3)
+  , dimnames=list(rr=letters[1:3],cc=letters[4:7])
+)
 
 # test data
 x <- matrix(runif(1e7),ncol=100,nrow=1e5)
