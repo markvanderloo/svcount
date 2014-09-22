@@ -41,11 +41,12 @@ microbenchmark(times=50
  , rowSums(is.na(x))
 )
 
-microbenchmark(times=50           
+microbenchmark(times=25           
    , count_missing(x,by=2)
    , colSums(is.na(x))
 )
 
+q()
 
 cat("### Benchmarking data.frames ---------------\n")
 d <- data.frame(
@@ -65,4 +66,9 @@ microbenchmark(times=50
 
 
 
-
+# x <- matrix(rep(letters[1],N),nrow=NROW)
+# x[1:floor(N/2)] <- NA
+# Rprof()
+# for (i in 1:100) count_missing(x,by=2)
+# Rprof(NULL)
+# s <- summaryRprof()

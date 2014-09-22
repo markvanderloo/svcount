@@ -3,6 +3,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include "sv.h"
+#include <omp.h>
 
 /* ---------------- integer ---------------- */
 
@@ -140,32 +141,37 @@ SEXP count_matrix_character_row_missing(SEXP x){
   return ans;
 }
 
+
+
 SEXP count_matrix_character_col_missing(SEXP x){
   PROTECT(x);
  
   SEXP dim = getAttrib(x,R_DimSymbol);
-  int nrow = INTEGER(dim)[0] - 1
+  int nrow = INTEGER(dim)[0]
     , ncol = INTEGER(dim)[1];
  
   SEXP ans;
   ans = PROTECT(allocVector(REALSXP, ncol));
 
-  idx t = 0;
   double  *count = REAL(ans);  
-  
+
   for ( idx i=0; i < ncol; i++, count++) (*count) = 0.0;
   count = REAL(ans);
-  
-  for ( idx j=0; j < ncol; j++, count++ ){
-    for ( idx i=0; i <= nrow; i++, t++){
-      if ( STRING_ELT(x,t) == NA_STRING ) (*count)++;
+
+  #pragma omp parallel
+  {
+    idx J;
+    #pragma omp for
+    for ( idx j=0; j < ncol; j++ ){
+      J = j*nrow;
+      for ( idx i=0; i < nrow; i++ ){
+        if ( STRING_ELT(x,i + J ) == NA_STRING ) count[j] += 1;
+      }
     }
   }
-
   UNPROTECT(2);
   return ans;
 }
-
 
 
 
