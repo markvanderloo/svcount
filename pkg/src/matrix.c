@@ -33,12 +33,14 @@ SEXP count_matrix_integer_row_missing(SEXP x){
   return ans;
 }
 
-SEXP count_matrix_integer_col_missing(SEXP x){
+SEXP count_matrix_integer_col_missing(SEXP x, SEXP nthrd){
   PROTECT(x);
- 
+  PROTECT(nthrd); 
+
   SEXP dim = getAttrib(x,R_DimSymbol);
-  int nrow = INTEGER(dim)[0] - 1
-    , ncol = INTEGER(dim)[1];
+  int nrow = INTEGER(dim)[0]
+    , ncol = INTEGER(dim)[1]
+    , nthreads = INTEGER(nthrd)[0];
  
   SEXP ans;
   ans = PROTECT(allocVector(REALSXP, ncol));
@@ -49,13 +51,17 @@ SEXP count_matrix_integer_col_missing(SEXP x){
   for ( idx i=0; i < ncol; i++, count++ ) (*count) = 0.0;
   count = REAL(ans);
   
-  for ( idx j=0; j < ncol; j++, count++ ){
-    for ( idx i=0; i<=nrow; i++, X++){
-      if ( *X==NA_INTEGER) (*count)++;
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(nthreads) 
+  #endif
+  for ( idx j=0; j < ncol; j++ ){
+    idx J = j*nrow;
+    for ( idx i=0; i<nrow; i++){
+      if ( X[i+J] == NA_INTEGER ) count[j]++;
     }
   }
 
-  UNPROTECT(2);
+  UNPROTECT(3);
   return ans;
 }
 
@@ -87,12 +93,15 @@ SEXP count_matrix_double_row_missing(SEXP x){
   return ans;
 }
 
-SEXP count_matrix_double_col_missing(SEXP x){
+
+SEXP count_matrix_double_col_missing(SEXP x, SEXP nthrd){
   PROTECT(x);
- 
+  PROTECT(nthrd); 
+
   SEXP dim = getAttrib(x,R_DimSymbol);
-  int nrow = INTEGER(dim)[0] - 1
-    , ncol = INTEGER(dim)[1];
+  int nrow = INTEGER(dim)[0] 
+    , ncol = INTEGER(dim)[1]
+    , nthreads = INTEGER(nthrd)[0];
  
   SEXP ans;
   ans = PROTECT(allocVector(REALSXP, ncol));
@@ -103,13 +112,17 @@ SEXP count_matrix_double_col_missing(SEXP x){
   for ( idx i=0; i < ncol; i++, count++) (*count) = 0.0;
   count = REAL(ans);
   
-  for ( idx j=0; j < ncol; j++, count++ ){
-    for ( idx i=0; i<=nrow; i++, X++){
-      if ( ISNAN(*X) ) (*count)++;
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(nthreads) 
+  #endif
+  for ( idx j=0; j < ncol; j++ ){
+    idx J = j*nrow;
+    for ( idx i=0; i < nrow; i++){
+      if ( ISNAN(X[i + J]) ) count[j] += 1;
     }
   }
 
-  UNPROTECT(2);
+  UNPROTECT(3);
   return ans;
 }
 
@@ -143,13 +156,16 @@ SEXP count_matrix_character_row_missing(SEXP x){
 
 
 
-SEXP count_matrix_character_col_missing(SEXP x){
+SEXP count_matrix_character_col_missing(SEXP x, SEXP nthrd){
   PROTECT(x);
- 
+  PROTECT(nthrd);
+  
+
   SEXP dim = getAttrib(x,R_DimSymbol);
   int nrow = INTEGER(dim)[0]
-    , ncol = INTEGER(dim)[1];
- 
+    , ncol = INTEGER(dim)[1]
+    , nthreads = INTEGER(nthrd)[0]; 
+
   SEXP ans;
   ans = PROTECT(allocVector(REALSXP, ncol));
 
@@ -158,18 +174,18 @@ SEXP count_matrix_character_col_missing(SEXP x){
   for ( idx i=0; i < ncol; i++, count++) (*count) = 0.0;
   count = REAL(ans);
 
-  #pragma omp parallel
-  {
-    idx J;
-    #pragma omp for
-    for ( idx j=0; j < ncol; j++ ){
-      J = j*nrow;
-      for ( idx i=0; i < nrow; i++ ){
-        if ( STRING_ELT(x,i + J ) == NA_STRING ) count[j] += 1;
-      }
+  
+  
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(nthreads) 
+  #endif
+  for ( idx j=0; j < ncol; j++ ){
+    idx J = j*nrow;
+    for ( idx i=0; i < nrow; i++ ){
+      if ( STRING_ELT(x,i + J ) == NA_STRING ) count[j] += 1;
     }
   }
-  UNPROTECT(2);
+  UNPROTECT(3);
   return ans;
 }
 

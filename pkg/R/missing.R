@@ -7,7 +7,9 @@
 #' 
 {}
 
-
+#' get maximum number of available threads
+#' 
+#' @export
 get_max_threads <- function() .Call("get_max_threads")
 
 
@@ -16,6 +18,7 @@ get_max_threads <- function() .Call("get_max_threads")
 #' @param x an R object
 #' @param ... optional extra parameters.
 #' @param by  Index in \code{dim(x)} that defines the dimension of the output.
+#' @param nthread Number of threads to request (doesn't always mean the system gives them to ya).
 #'
 #' @section Details:
 #' 
@@ -102,12 +105,14 @@ array_mode <- function(x){
 
 #' @rdname count_missing
 #' @export 
-count_missing.matrix <- function(x, by=0,...){
+count_missing.matrix <- function(x, by=0, nthread=get_max_threads(),...){
   if (is.character(by)) by <- match_by(by,x)
+  nthread <- as.integer(nthread)
+  stopifnot(nthread > 0)
   switch(paste0(by,collapse="")
     , '0' = count_missing.default(x,...)
-    , '1' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_row_missing"),x),rownames(x))
-    , '2' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_col_missing"),x),colnames(x))
+    , '1' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_row_missing"),x,nthread),rownames(x))
+    , '2' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_col_missing"),x,nthread),colnames(x))
     , '12'= {
       out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
       .Call(paste0("count_missing_along_",storage.mode(x)),x,out)
