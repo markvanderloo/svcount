@@ -46,7 +46,6 @@ microbenchmark(times=25
    , colSums(is.na(x))
 )
 
-q()
 
 cat("### Benchmarking data.frames ---------------\n")
 d <- data.frame(

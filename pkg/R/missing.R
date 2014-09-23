@@ -38,7 +38,11 @@ count_missing <- function(x,...){
 #' @rdname count_missing
 #' @export 
 count_missing.default <- function(x,...){
-  .Call(paste0("count_",storage.mode(x),"_missing"),x)
+  switch(storage.mode(x)
+    , 'integer'   = .Call('count_integer_missing'  , x)
+    , 'double'    = .Call('count_double_missing'   , x)
+    , 'character' = .Call('count_character_missing', x)
+  )
 }
 
 
@@ -84,8 +88,12 @@ count_missing.data.frame <- function(x,by=0,...){
     , "0" = sum(sapply(x,count_missing.default))
     , "1" = {
       out <- numeric(nrow(x))
-      for ( i in seq_len(ncol(x))){ 
-        .Call(paste0("count_missing_along_",storage.mode(x[[i]])),x[[i]],out)
+      for ( i in seq_len(ncol(x))){
+        switch(storage.mode(x[[i]])
+          , 'integer'   = .Call('count_missing_along_integer'   , x[[i]],out)
+          , 'double'    = .Call('count_missing_along_double'    , x[[i]],out)
+          , 'character' = .Call('count_missing_along_character' , x[[i]],out)
+        )
       }
       out
     }
@@ -103,6 +111,7 @@ array_mode <- function(x){
   if (m=='double') 'numeric' else m
 }
 
+
 #' @rdname count_missing
 #' @export 
 count_missing.matrix <- function(x, by=0, nthread=get_max_threads(),...){
@@ -111,15 +120,31 @@ count_missing.matrix <- function(x, by=0, nthread=get_max_threads(),...){
   stopifnot(nthread > 0)
   switch(paste0(by,collapse="")
     , '0' = count_missing.default(x,...)
-    , '1' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_row_missing"),x,nthread),rownames(x))
-    , '2' = setNames(.Call(paste0("count_matrix_",storage.mode(x),"_col_missing"),x,nthread),colnames(x))
+    , '1' = setNames( # ugly switch but literals are needed to pass R CMD CHECK --as-cran
+        switch(storage.mode(x) 
+          , 'integer'   = .Call('count_matrix_integer_row_missing'  , x, nthread)
+          , 'double'    = .Call('count_matrix_double_row_missing'   , x, nthread)
+          , 'character' = .Call('count_matrix_character_row_missing', x, nthread)
+        ), rownames(x)
+      )
+    , '2' = setNames(
+        switch(storage.mode(x)
+          , 'integer'   = .Call('count_matrix_integer_col_missing'  , x, nthread)
+          , 'double'    = .Call('count_matrix_double_col_missing'   , x, nthread)
+          , 'character' = .Call('count_matrix_character_col_missing', x, nthread)
+        ), colnames(x)
+      )
     , '12'= {
-      out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
-      .Call(paste0("count_missing_along_",storage.mode(x)),x,out)
+        out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
+        switch(storage.mode(x)
+          , 'integer'     = .Call('count_missing_along_integer'  , x, out)
+          , 'double'      = .Call('count_missing_along_double'   , x, out)
+          , 'character'   = .Call('count_missing_along_character', x, out)
+        )
       } 
-    , '21' = {
+    , '21' = { 
       out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
-      t(.Call(paste0("count_missing_along_",storage.mode(x)),x,out))
+      t( count_missing.matrix(x, by=c(1,2),nthread=nthread,...) )
     }
     , stop('Invalid marginal definition\n')
   )
@@ -153,7 +178,11 @@ count_missing.array <- function(x,by=0,...){
   
   if (anyNA(outdim)) stop("Invalid output dimension")
   out <- array(0.0, dim=outdim, dimnames=outdn)
-  .Call(sprintf("count_array_%s_missing",storage.mode(x)),x,by,out)
+  switch(storage.mode(x)
+    , 'integer'   = .Call("count_array_integer_missing",x,by,out)
+    , 'double'    = .Call("count_array_double_missing", x,by,out)
+    , "character" = .Call("count_array_character_missing", x,by,out)
+  )
 }
 
 
