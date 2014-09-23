@@ -8,6 +8,9 @@
 {}
 
 
+get_max_threads <- function() .Call("get_max_threads")
+
+
 #' Count missing values like a BOSS
 #'
 #' @param x an R object
