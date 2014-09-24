@@ -3,6 +3,7 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <math.h>
+#include <omp.h>
 #include "sv.h"
 
 // --- simple counters over vectors ---//
@@ -16,56 +17,55 @@ static SEXP mkans(double x){
 }
 
 // count any missings (NaN and NA)
-SEXP count_double_missing(SEXP x){
+SEXP count_double_missing(SEXP x, SEXP nthrd){
   PROTECT(x);
+  PROTECT(nthrd);
   idx l = (idx) length(x);
   double *X = REAL(x);
-  double n = 0;
+  double n = 0.0;
+  int nthreads = INTEGER(nthrd)[0];
 
-  for ( idx i = 0; i < l; i++, X++ ){
-    if ( ISNAN(*X) ) ++n;
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(nthreads) reduction(+:n) 
+  #endif
+  for ( idx i = 0; i < l; i++ ){
+    if ( ISNAN(X[i]) ) ++n;
   }
-  UNPROTECT(1);
+  UNPROTECT(2);
   return mkans(n);
 }
 
-// count pure NA (not NaN)
-/* Currently not exported
-SEXP count_double_NA(SEXP x){
+
+SEXP count_integer_missing(SEXP x, SEXP nthrd){
   PROTECT(x);
-  idx l = (idx) length(x);
-  double *X = REAL(x);
-  double n = 0;
-
-  for ( idx i = 0; i < l; i++, X++ ){
-    if ( ISNA(*X) ) ++n;
-  }
-  UNPROTECT(1);
-  return mkans(n);
-}
-*/
-
-
-SEXP count_integer_missing(SEXP x){
-  PROTECT(x);
+  PROTECT(nthrd);
   idx  l = (idx) length(x);
   int *X = INTEGER(x);
   double n = 0;
-  for( idx i = 0; i < l; i++, X++){
-    if ( *X == NA_INTEGER ) ++n;
+  int nthreads = INTEGER(nthrd)[0];
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(nthreads) reduction(+:n) 
+  #endif
+  for( idx i = 0; i < l; i++){
+    if ( X[i] == NA_INTEGER ) ++n;
   }
-  UNPROTECT(1);
+  UNPROTECT(2);
   return mkans(n);
 }
 
-SEXP count_character_missing(SEXP x){
+SEXP count_character_missing(SEXP x, SEXP nthrd){
   PROTECT(x);
+  PROTECT(nthrd);
   idx  l = (idx) length(x);
   double n = 0;
+  int nthreads = INTEGER(nthrd)[0];
+  #ifdef _OPENMP
+  #pragma omp parallel for num_threads(nthreads) reduction(+:n) 
+  #endif
   for( idx i = 0; i < l; i++ ){
     if ( STRING_ELT(x,i) == NA_STRING ) ++n;
   }
-  UNPROTECT(1);
+  UNPROTECT(2);
   return mkans(n);
 }
 

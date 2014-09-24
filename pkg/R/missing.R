@@ -18,7 +18,7 @@ get_max_threads <- function() .Call("get_max_threads")
 #' @param x an R object
 #' @param ... optional extra parameters.
 #' @param by  Index in \code{dim(x)} that defines the dimension of the output.
-#' @param nthread Number of threads to request (doesn't always mean the system gives them to ya).
+#' @param nthreads Number of threads to request (doesn't always mean the system gives them to ya).
 #'
 #' @section Details:
 #' 
@@ -37,37 +37,47 @@ count_missing <- function(x,...){
 
 #' @rdname count_missing
 #' @export 
-count_missing.default <- function(x,...){
+count_missing.default <- function(x,nthreads=get_max_threads(),...){
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
   switch(storage.mode(x)
-    , 'integer'   = .Call('count_integer_missing'  , x)
-    , 'double'    = .Call('count_double_missing'   , x)
-    , 'character' = .Call('count_character_missing', x)
+    , 'integer'   = .Call('count_integer_missing'  , x,nthreads)
+    , 'double'    = .Call('count_double_missing'   , x,nthreads)
+    , 'character' = .Call('count_character_missing', x,nthreads)
   )
 }
 
 
 #' @rdname count_missing
 #' @export 
-count_missing.numeric <- function(x,...){
-  .Call('count_double_missing',x)  
+count_missing.numeric <- function(x, nthreads=get_max_threads(), ...){
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
+  .Call('count_double_missing',x, nthreads)  
 }
 
 #' @rdname count_missing
 #' @export 
-count_missing.integer <- function(x,...){
-  .Call('count_integer_missing',x)
+count_missing.integer <- function(x, nthreads=get_max_threads(), ...){
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
+  .Call('count_integer_missing',x, nthreads)
 }
 
 #' @rdname count_missing
 #' @export 
-count_missing.character <- function(x,...){
-  .Call('count_character_missing',x)
+count_missing.character <- function(x, nthreads=get_max_threads(), ...){
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
+  .Call('count_character_missing',x, nthreads)
 }
 
 #' @rdname count_missing
 #' @export 
-count_missing.logical <- function(x,...){
-  .Call('count_integer_missing',x)  
+count_missing.logical <- function(x, nthreads=get_max_threads(), ...){
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
+  .Call('count_integer_missing',x, nthreads)  
 }
 
 # 'raw' has no NA definition, but since is.na works on it nevertheless, we present:
@@ -77,7 +87,9 @@ count_missing.raw <- function(x,...) 0
 
 #' @rdname count_missing
 #' @export 
-count_missing.factor <- function(x,...){
+count_missing.factor <- function(x, nthreads=get_max_threads(), ...){
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
   .Call('count_integer_missing',x)
 }
 
@@ -114,24 +126,24 @@ array_mode <- function(x){
 
 #' @rdname count_missing
 #' @export 
-count_missing.matrix <- function(x, by=0, nthread=get_max_threads(),...){
+count_missing.matrix <- function(x, by=0, nthreads=get_max_threads(),...){
   if (is.character(by)) by <- match_by(by,x)
-  nthread <- as.integer(nthread)
-  stopifnot(nthread > 0)
+  nthreads <- as.integer(nthreads)
+  stopifnot(nthreads > 0)
   switch(paste0(by,collapse="")
-    , '0' = count_missing.default(x,...)
+    , '0' = count_missing.default(x,nthreads,...)
     , '1' = setNames( # ugly switch but literals are needed to pass R CMD CHECK --as-cran
         switch(storage.mode(x) 
-          , 'integer'   = .Call('count_matrix_integer_row_missing'  , x, nthread)
-          , 'double'    = .Call('count_matrix_double_row_missing'   , x, nthread)
-          , 'character' = .Call('count_matrix_character_row_missing', x, nthread)
+          , 'integer'   = .Call('count_matrix_integer_row_missing'  , x, nthreads)
+          , 'double'    = .Call('count_matrix_double_row_missing'   , x, nthreads)
+          , 'character' = .Call('count_matrix_character_row_missing', x, nthreads)
         ), rownames(x)
       )
     , '2' = setNames(
         switch(storage.mode(x)
-          , 'integer'   = .Call('count_matrix_integer_col_missing'  , x, nthread)
-          , 'double'    = .Call('count_matrix_double_col_missing'   , x, nthread)
-          , 'character' = .Call('count_matrix_character_col_missing', x, nthread)
+          , 'integer'   = .Call('count_matrix_integer_col_missing'  , x, nthreads)
+          , 'double'    = .Call('count_matrix_double_col_missing'   , x, nthreads)
+          , 'character' = .Call('count_matrix_character_col_missing', x, nthreads)
         ), colnames(x)
       )
     , '12'= {
@@ -144,7 +156,7 @@ count_missing.matrix <- function(x, by=0, nthread=get_max_threads(),...){
       } 
     , '21' = { 
       out <- array(0.0,dim=dim(x),dimnames=dimnames(x))
-      t( count_missing.matrix(x, by=c(1,2),nthread=nthread,...) )
+      t( count_missing.matrix(x, by=c(1,2),nthreads=nthreads,...) )
     }
     , stop('Invalid marginal definition\n')
   )
