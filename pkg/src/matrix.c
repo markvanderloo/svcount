@@ -3,7 +3,9 @@
 #include <R.h>
 #include <Rinternals.h>
 #include "sv.h"
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 
 /* ---------------- integer ---------------- */
 
@@ -51,9 +53,7 @@ SEXP count_matrix_integer_col_missing(SEXP x, SEXP nthrd){
   for ( idx i=0; i < ncol; i++, count++ ) (*count) = 0.0;
   count = REAL(ans);
   
-  #ifdef _OPENMP
   #pragma omp parallel for num_threads(nthreads) 
-  #endif
   for ( idx j=0; j < ncol; j++ ){
     idx J = j*nrow;
     for ( idx i=0; i<nrow; i++){
@@ -112,9 +112,7 @@ SEXP count_matrix_double_col_missing(SEXP x, SEXP nthrd){
   for ( idx i=0; i < ncol; i++, count++) (*count) = 0.0;
   count = REAL(ans);
   
-  #ifdef _OPENMP
   #pragma omp parallel for num_threads(nthreads) 
-  #endif
   for ( idx j=0; j < ncol; j++ ){
     idx J = j*nrow;
     for ( idx i=0; i < nrow; i++){
@@ -176,9 +174,7 @@ SEXP count_matrix_character_col_missing(SEXP x, SEXP nthrd){
 
   
   
-  #ifdef _OPENMP
   #pragma omp parallel for num_threads(nthreads) 
-  #endif
   for ( idx j=0; j < ncol; j++ ){
     idx J = j*nrow;
     for ( idx i=0; i < nrow; i++ ){

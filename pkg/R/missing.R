@@ -3,7 +3,7 @@
 #' @name svcount-package
 #' @docType package
 #' @useDynLib svcount
-#' @import methods
+#' @import methods microbenchmark
 #' 
 {}
 

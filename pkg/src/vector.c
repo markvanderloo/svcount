@@ -3,7 +3,9 @@
 #include <R.h>
 #include <Rinternals.h>
 #include <math.h>
+#ifdef _OPENMP
 #include <omp.h>
+#endif
 #include "sv.h"
 
 // --- simple counters over vectors ---//
@@ -25,9 +27,7 @@ SEXP count_double_missing(SEXP x, SEXP nthrd){
   double n = 0.0;
   int nthreads = INTEGER(nthrd)[0];
 
-  #ifdef _OPENMP
   #pragma omp parallel for num_threads(nthreads) reduction(+:n) 
-  #endif
   for ( idx i = 0; i < l; i++ ){
     if ( ISNAN(X[i]) ) ++n;
   }
@@ -43,9 +43,8 @@ SEXP count_integer_missing(SEXP x, SEXP nthrd){
   int *X = INTEGER(x);
   double n = 0;
   int nthreads = INTEGER(nthrd)[0];
-  #ifdef _OPENMP
+
   #pragma omp parallel for num_threads(nthreads) reduction(+:n) 
-  #endif
   for( idx i = 0; i < l; i++){
     if ( X[i] == NA_INTEGER ) ++n;
   }
@@ -59,9 +58,8 @@ SEXP count_character_missing(SEXP x, SEXP nthrd){
   idx  l = (idx) length(x);
   double n = 0;
   int nthreads = INTEGER(nthrd)[0];
-  #ifdef _OPENMP
+  
   #pragma omp parallel for num_threads(nthreads) reduction(+:n) 
-  #endif
   for( idx i = 0; i < l; i++ ){
     if ( STRING_ELT(x,i) == NA_STRING ) ++n;
   }

@@ -9,7 +9,7 @@ Author: Mark van der Loo
 Description: Faster detection and counting of special values (NA, NaN,...)
 Version: 0.0.1
 Depends: R (>= 3.0.0)
-Imports: methods
+Imports: methods, microbenchmark
 URL: https://github.com/markvanderloo/svcount
 Date: 2013-04-28
 Suggests: testthat
